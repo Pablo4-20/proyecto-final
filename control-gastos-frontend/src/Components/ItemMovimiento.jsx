@@ -1,54 +1,32 @@
 import MovimientoUIFactory from '../utils/MovimientoFactory';
 
 function ItemMovimiento({ mov, onEliminar }) {
-  // Aplicación del Patrón Factory: Delegamos la lógica visual a la fábrica
   const ui = MovimientoUIFactory.crearUI(mov.tipo);
 
   return (
-    <li style={{ 
-      padding: '15px', 
-      borderBottom: '1px solid #ddd', 
-      margin: '10px 0', 
-      display: 'flex', 
-      justifyContent: 'space-between', 
-      alignItems: 'center',
-      backgroundColor: ui.colorFondo,
-      borderRadius: '8px',
-      borderLeft: `6px solid ${ui.colorPrincipal}`,
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-    }}>
+    <li className={`flex justify-between items-center p-4 mb-4 rounded-xl border-l-4 shadow-sm transition-colors ${ui.bgClass} ${ui.borderClass}`}>
       <div>
-        <strong style={{ fontSize: '1.1em', color: '#333' }}>
+        <strong className="text-lg flex items-center gap-2 text-gray-800 dark:text-gray-100">
           {ui.icono} {mov.categoria}
         </strong>
-        <br/>
-        <span style={{ color: ui.colorPrincipal, fontWeight: 'bold', fontSize: '1.2em', display: 'inline-block', marginTop: '5px' }}>
+        <div className={`font-black text-xl mt-1 ${ui.textClass}`}>
           {ui.signo}${mov.monto} 
-          <small style={{ marginLeft: '8px', fontSize: '0.7em', color: '#666' }}>
+          <span className="text-xs ml-2 text-gray-500 dark:text-gray-400 font-normal">
             ({mov.tipo.toUpperCase()})
-          </small>
-        </span>
-        <br/>
-        <small style={{ color: '#777', display: 'inline-block', marginTop: '5px' }}>
-          📅 {mov.fecha} {mov.descripcion ? `- 📝 ${mov.descripcion}` : ''}
-        </small>
+          </span>
+        </div>
+        <div className="text-sm text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-2">
+          <span>📅 {mov.fecha}</span>
+          {mov.descripcion && <span>📝 {mov.descripcion}</span>}
+        </div>
       </div>
       
       <button 
         onClick={() => onEliminar(mov.id)} 
-        style={{ 
-          backgroundColor: '#ff5252', 
-          color: 'white', 
-          border: 'none', 
-          padding: '8px 12px', 
-          cursor: 'pointer', 
-          borderRadius: '4px',
-          fontWeight: 'bold',
-          transition: 'background-color 0.3s'
-        }}
+        className="bg-red-500 hover:bg-red-600 text-white w-9 h-9 rounded-full flex items-center justify-center shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
         title="Eliminar registro"
       >
-        X
+        ✕
       </button>
     </li>
   );

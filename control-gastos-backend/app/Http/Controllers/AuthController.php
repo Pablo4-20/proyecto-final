@@ -4,10 +4,38 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash; 
 use App\Models\User;
 
 class AuthController extends Controller
 {
+    public function register(Request $request)
+    {
+        // 1. Validamos los datos de registro
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6'
+        ]);
+
+        // 2. Creamos el nuevo usuario con la contraseña encriptada
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
+
+        // 3. Generamos su token de acceso automáticamente para que entre de una vez
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Usuario registrado con éxito',
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'user' => $user
+        ], 201);
+    }
+
     public function login(Request $request)
     {
         // 1. Validamos los datos que envía React

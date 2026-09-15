@@ -7,16 +7,20 @@ import ListaMovimientos from '../components/ListaMovimientos';
 function Dashboard() {
   const navigate = useNavigate();
   const [movimientos, setMovimientos] = useState([]);
+  const [darkMode, setDarkMode] = useState(false);
+  const [usuario, setUsuario] = useState({ name: 'Usuario' });
+  
+  // Estado para controlar el Modal de Eliminación personalizado
+  const [modalEliminar, setModalEliminar] = useState({ abierto: false, id: null });
 
   const handleCerrarSesion = async () => {
     try {
-      // Le avisamos al backend que destruya el token en la base de datos
       await api.post('/logout'); 
     } catch (error) {
-      console.error("Error al cerrar sesión en el servidor:", error);
+      console.error("Error al salir:", error);
     } finally {
-      // Pase lo que pase, borramos la llave local y lo expulsamos al login
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       navigate('/login');
     }
   };
@@ -26,11 +30,18 @@ function Dashboard() {
       const respuesta = await api.get('/movimientos');
       setMovimientos(respuesta.data);
     } catch (error) {
-      console.error("Error de conexión:", error);
+      console.error("Error:", error);
     }
   };
 
   useEffect(() => {
+    // 1. Recuperamos el usuario guardado en localStorage
+    const usuarioGuardado = localStorage.getItem('user');
+    if (usuarioGuardado) {
+      setUsuario(JSON.parse(usuarioGuardado));
+    }
+    
+    // 2. Cargamos los movimientos
     cargarMovimientos();
   }, []);
 
@@ -39,48 +50,136 @@ function Dashboard() {
       await api.post('/movimientos', nuevoMovimiento);
       cargarMovimientos();
     } catch (error) {
-      const mensajeError = error.response?.data?.message || error.message;
-      alert(`Falló el guardado: ${mensajeError}`);
+      alert(`Falló el guardado: ${error.message}`);
     }
   };
 
-  const handleEliminarMovimiento = async (id) => {
-    if (window.confirm("¿Estás seguro de eliminar este movimiento?")) {
-      try {
-        await api.delete(`/movimientos/${id}`);
-        cargarMovimientos();
-      } catch (error) {
-        console.error("Error al eliminar:", error);
-      }
+  const solicitarEliminar = (id) => {
+    setModalEliminar({ abierto: true, id });
+  };
+
+  const confirmarEliminar = async () => {
+    try {
+      await api.delete(`/movimientos/${modalEliminar.id}`);
+      cargarMovimientos();
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setModalEliminar({ abierto: false, id: null });
     }
   };
+
+  // --- CÁLCULOS AUTOMÁTICOS PARA LAS TARJETAS ---
+  const totalIngresos = movimientos
+    .filter(m => m.tipo === 'ingreso')
+    .reduce((acc, m) => acc + parseFloat(m.monto), 0);
+
+  const totalGastos = movimientos
+    .filter(m => m.tipo === 'gasto')
+    .reduce((acc, m) => acc + parseFloat(m.monto), 0);
+
+  const saldoDisponible = totalIngresos - totalGastos;
 
   return (
-    <div className="contenedor">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1>Control de Gastos Familiar 💰</h1>
-        <button 
-          onClick={handleCerrarSesion}
-          style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '10px 15px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          Cerrar Sesión
-        </button>
-      </div>
-      
-      {/* Aquí volvemos a inyectar el formulario */}
-      <FormularioMovimiento onAgregar={handleAgregarMovimiento} />
+    <div className={`${darkMode ? 'dark' : ''} min-h-screen transition-colors duration-300 relative`}>
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 p-4 md:p-8">
+        <div className="max-w-6xl mx-auto">
+          
+          {/* Encabezado con el nombre de usuario */}
+          <header className="flex flex-col md:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-sm mb-6 transition-colors">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold">Control de Gastos 💰</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Bienvenido, <span className="font-semibold text-blue-600 dark:text-blue-400">{usuario.name}</span>
+              </p>
+            </div>
 
-      <hr style={{ margin: '30px 0' }}/>
+            <div className="flex gap-4 items-center mt-4 md:mt-0">
+              <button 
+                onClick={() => setDarkMode(!darkMode)} 
+                className="text-2xl p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                title="Alternar tema"
+              >
+                {darkMode ? '☀️' : '🌙'}
+              </button>
+              <button 
+                onClick={handleCerrarSesion}
+                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-md cursor-pointer"
+              >
+                Salir
+              </button>
+            </div>
+          </header>
 
-      <div className="lista-movimientos">
-        <h2>Historial de Movimientos</h2>
-        
-        {/* Y aquí volvemos a inyectar la lista */}
-        <ListaMovimientos 
-          movimientos={movimientos} 
-          onEliminar={handleEliminarMovimiento} 
-        />
+          {/* Tarjetas de Resumen Visuales */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border-l-4 border-green-500 transition-colors flex flex-col justify-center">
+              <h3 className="text-gray-500 dark:text-gray-400 text-sm font-bold uppercase tracking-wider mb-2">Total Ingresos</h3>
+              <p className="text-3xl font-black text-green-600 dark:text-green-400">
+                +${totalIngresos.toFixed(2)}
+              </p>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border-l-4 border-red-500 transition-colors flex flex-col justify-center">
+              <h3 className="text-gray-500 dark:text-gray-400 text-sm font-bold uppercase tracking-wider mb-2">Total Gastos</h3>
+              <p className="text-3xl font-black text-red-600 dark:text-red-400">
+                -${totalGastos.toFixed(2)}
+              </p>
+            </div>
+
+            <div className={`bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border-l-4 transition-colors flex flex-col justify-center ${saldoDisponible >= 0 ? 'border-blue-500' : 'border-orange-500'}`}>
+              <h3 className="text-gray-500 dark:text-gray-400 text-sm font-bold uppercase tracking-wider mb-2">Saldo Disponible</h3>
+              <p className={`text-3xl font-black ${saldoDisponible >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                ${saldoDisponible.toFixed(2)}
+              </p>
+            </div>
+          </div>
+
+          {/* Contenido a dos columnas */}
+          <main className="grid md:grid-cols-3 gap-8">
+            <section className="md:col-span-1 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm h-fit transition-colors">
+              <h2 className="text-xl font-bold mb-6 border-b pb-2 dark:border-gray-700">Registrar Nuevo</h2>
+              <FormularioMovimiento onAgregar={handleAgregarMovimiento} />
+            </section>
+
+            <section className="md:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm transition-colors">
+              <h2 className="text-xl font-bold mb-6 border-b pb-2 dark:border-gray-700">Historial</h2>
+              <ListaMovimientos movimientos={movimientos} onEliminar={solicitarEliminar} />
+            </section>
+          </main>
+
+        </div>
       </div>
+
+      {/* --- MODAL DE ELIMINACIÓN PERSONALIZADO --- */}
+      {modalEliminar.abierto && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full border border-gray-200 dark:border-gray-700 text-center animate-in fade-in zoom-in duration-200">
+            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 text-red-500 flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+              ⚠️
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">¿Eliminar registro?</h3>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+              Esta acción no se puede deshacer y actualizará tus saldos automáticamente.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setModalEliminar({ abierto: false, id: null })}
+                className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2.5 rounded-lg transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarEliminar}
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-lg transition-colors shadow-md cursor-pointer"
+              >
+                Sí, eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
