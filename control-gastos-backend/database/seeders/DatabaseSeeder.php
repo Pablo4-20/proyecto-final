@@ -3,23 +3,23 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Movimiento;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
+        // 1. CREAMOS al usuario y lo GUARDAMOS en la variable $user
+        $user = User::factory()->create([
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'email' => 'admin@test.com',
+            'password' => bcrypt('password'),
+        ]);
+
+        // 2. Ahora sí, usamos el id de ese $user para los 20 movimientos
+        Movimiento::factory(20)->create([
+            'user_id' => $user->id
         ]);
     }
 }

@@ -1,7 +1,7 @@
 import ItemMovimiento from './ItemMovimiento';
 
 function ListaMovimientos({ movimientos, onEliminar }) {
-  if (movimientos.length === 0) {
+  if (!movimientos || movimientos.length === 0) {
     return <p>Aún no hay registros. ¡Añade tu primer movimiento!</p>;
   }
 
