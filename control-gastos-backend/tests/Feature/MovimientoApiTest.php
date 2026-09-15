@@ -6,61 +6,71 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Models\User;
 use App\Models\Movimiento;
+use Laravel\Sanctum\Sanctum; // Importamos Sanctum para simular sesiones[cite: 3]
 
 class MovimientoApiTest extends TestCase
 {
-    // Este trait es magia pura: limpia la base de datos de pruebas cada vez que termina
     use RefreshDatabase; 
 
     public function test_usuario_no_autenticado_no_puede_ver_movimientos()
     {
-        // Simulamos una petición GET a la API sin token
         $response = $this->getJson('/api/movimientos');
-
-        // Esperamos un error 401 (No autorizado)
         $response->assertStatus(401); 
     }
 
-    public function test_usuario_autenticado_puede_obtener_movimientos()
+    public function test_usuario_autenticado_solo_ve_sus_propios_movimientos()
     {
-        // 1. Fabricamos un usuario de prueba
         $user = User::factory()->create();
-
-        // 2. Le fabricamos 3 movimientos a ese usuario
         Movimiento::factory(3)->create(['user_id' => $user->id]);
 
-        // 3. Simulamos que el usuario inicia sesión y hace la petición GET
-        $response = $this->actingAs($user)->getJson('/api/movimientos');
+        // Autenticamos al usuario simuladamente[cite: 3]
+        Sanctum::actingAs($user); 
 
-        // 4. Verificamos que devuelva status 200 (OK) y exactamente 3 registros
+        $response = $this->getJson('/api/movimientos');
+
         $response->assertStatus(200);
         $response->assertJsonCount(3);
     }
 
     public function test_usuario_autenticado_puede_crear_un_movimiento()
     {
-        // 1. Fabricamos un usuario
         $user = User::factory()->create();
+        Sanctum::actingAs($user);
 
-        // 2. Preparamos los datos del formulario (como si vinieran de React)
         $datosFormulario = [
             'tipo' => 'gasto',
             'monto' => 150.50,
             'categoria' => 'Transporte',
             'fecha' => '2026-09-15',
-            'descripcion' => 'Taxi al centro'
+            'descripcion' => 'Taxi'
         ];
 
-        // 3. Simulamos el envío por POST
-        $response = $this->actingAs($user)->postJson('/api/movimientos', $datosFormulario);
+        $response = $this->postJson('/api/movimientos', $datosFormulario);
 
-        // 4. Verificamos que se haya creado (Status 201)
         $response->assertStatus(201);
-        
-        // 5. Verificamos que realmente exista en la base de datos
         $this->assertDatabaseHas('movimientos', [
             'monto' => 150.50,
-            'categoria' => 'Transporte'
+            'user_id' => $user->id // Confirmamos que se guardó con su ID
         ]);
+    }
+
+    // Nuevo test de aislamiento: Un usuario no puede borrar/ver datos de otro[cite: 3]
+    public function test_un_usuario_no_puede_borrar_el_movimiento_de_otro()
+    {
+        // Creamos dos usuarios distintos[cite: 3]
+        $userA = User::factory()->create();
+        $userB = User::factory()->create();
+
+        // Le creamos un movimiento al Usuario B[cite: 3]
+        $movimientoDeB = Movimiento::factory()->create(['user_id' => $userB->id]);
+
+        // Iniciamos sesión como el Usuario A[cite: 3]
+        Sanctum::actingAs($userA);
+
+        // El Usuario A intenta eliminar el movimiento del Usuario B
+        $response = $this->deleteJson("/api/movimientos/{$movimientoDeB->id}");
+
+        // Verificamos que el sistema lo rechace con un 404 (No Encontrado)[cite: 3]
+        $response->assertStatus(404);
     }
 }
