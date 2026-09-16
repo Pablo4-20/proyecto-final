@@ -4,6 +4,13 @@ Plataforma integral para la gestión de finanzas personales, desarrollada como p
 
 **Desarrollador:** Pablo David Holguin Rios
 
+## 📸 Capturas del Sistema
+
+<img width="1627" height="962" alt="image" src="https://github.com/user-attachments/assets/eb3e6b76-34eb-4a5f-8356-fd8d9b4e021c" />
+
+<img width="1659" height="924" alt="image" src="https://github.com/user-attachments/assets/1ed3825c-4cc0-413a-b896-3a3d15470bfc" />
+
+
 ## 🛠 Arquitectura y Tecnologías
 El sistema está construido bajo una arquitectura cliente-servidor separada (Frontend en React y Backend en Laravel), comunicándose a través de una API REST protegida.
 
