@@ -1,0 +1,24 @@
+name: Backend CI Tests
+on:
+  push:
+    branches: [ main ]
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./control-gastos-backend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configurar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+      - name: Instalar Dependencias
+        run: composer install --no-interaction --prefer-dist
+      - name: Preparar Entorno
+        run: cp .env.example .env
+      - name: Generar Key
+        run: php artisan key:generate
+      - name: Ejecutar Pruebas
+        run: php artisan test
