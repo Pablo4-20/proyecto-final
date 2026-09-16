@@ -11,7 +11,7 @@ El sistema está construido bajo una arquitectura cliente-servidor separada (Fro
 * **Backend:** Laravel 11, Base de datos SQLite, Autenticación mediante Laravel Sanctum.
 
 ## 🧩 Patrones de Diseño (GoF) Aplicados
-Para mantener un código limpio y escalable, se aplicaron los siguientes patrones de diseño de la banda de los cuatro (GoF):
+Para mantener un código limpio y escalable, se aplicaron los siguientes patrones de diseño (GoF):
 1. **Factory Method:** Implementado en el frontend (`MovimientoUIFactory.js`) para centralizar y delegar la creación de estilos, clases de Tailwind e íconos dependiendo del tipo de movimiento (Ingreso o Gasto).
 2. **Observer:** Implementado en el backend para registrar automáticamente logs de auditoría sin saturar los controladores cada vez que se crea o elimina un registro.
 
