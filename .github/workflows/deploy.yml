@@ -9,6 +9,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./control-gastos-frontend # <-- Clave: Entrar a la carpeta
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,7 +21,7 @@ jobs:
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          path: ./control-gastos-frontend/dist # <-- Clave: Subir la carpeta dist correcta
   deploy:
     environment:
       name: github-pages
