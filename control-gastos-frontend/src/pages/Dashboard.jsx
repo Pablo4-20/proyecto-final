@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import FormularioMovimiento from '../components/FormularioMovimiento';
-import ListaMovimientos from '../components/ListaMovimientos';
+import FormularioMovimiento from '../Components/FormularioMovimiento';
+import ListaMovimientos from '../Components/ListaMovimientos';
 
 function Dashboard() {
   const navigate = useNavigate();
