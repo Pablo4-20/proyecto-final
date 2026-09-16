@@ -1,14 +1,19 @@
 import ItemMovimiento from './ItemMovimiento';
 
-function ListaMovimientos({ movimientos, onEliminar }) {
-  if (!movimientos || movimientos.length === 0) {
-    return <p>Aún no hay registros. ¡Añade tu primer movimiento!</p>;
+function ListaMovimientos({ movimientos, onEliminar, onEditar }) {
+  if (movimientos.length === 0) {
+    return <p className="text-center text-gray-500 dark:text-gray-400 py-8">No hay movimientos registrados.</p>;
   }
 
   return (
-    <ul style={{ listStyle: 'none', padding: 0 }}>
+    <ul>
       {movimientos.map((mov) => (
-        <ItemMovimiento key={mov.id} mov={mov} onEliminar={onEliminar} />
+        <ItemMovimiento 
+          key={mov.id} 
+          mov={mov} 
+          onEliminar={onEliminar} 
+          onEditar={onEditar} // <-- Pasamos la función
+        />
       ))}
     </ul>
   );

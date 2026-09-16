@@ -1,6 +1,6 @@
 import MovimientoUIFactory from '../utils/MovimientoFactory';
 
-function ItemMovimiento({ mov, onEliminar }) {
+function ItemMovimiento({ mov, onEliminar, onEditar }) {
   const ui = MovimientoUIFactory.crearUI(mov.tipo);
 
   return (
@@ -15,19 +15,29 @@ function ItemMovimiento({ mov, onEliminar }) {
             ({mov.tipo.toUpperCase()})
           </span>
         </div>
-        <div className="text-sm text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-2">
+        <div className="text-sm text-gray-500 dark:text-gray-400 mt-2 flex flex-col gap-1">
           <span>📅 {mov.fecha}</span>
           {mov.descripcion && <span>📝 {mov.descripcion}</span>}
         </div>
       </div>
       
-      <button 
-        onClick={() => onEliminar(mov.id)} 
-        className="bg-red-500 hover:bg-red-600 text-white w-9 h-9 rounded-full flex items-center justify-center shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
-        title="Eliminar registro"
-      >
-        ✕
-      </button>
+      {/* Contenedor de botones: Editar y Eliminar */}
+      <div className="flex flex-col gap-2">
+        <button 
+          onClick={() => onEditar(mov)} 
+          className="bg-blue-500 hover:bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center shadow-sm transition-colors focus:outline-none cursor-pointer"
+          title="Editar registro"
+        >
+          ✏️
+        </button>
+        <button 
+          onClick={() => onEliminar(mov.id)} 
+          className="bg-red-500 hover:bg-red-600 text-white w-9 h-9 rounded-full flex items-center justify-center shadow-sm transition-colors focus:outline-none cursor-pointer"
+          title="Eliminar registro"
+        >
+          ✕
+        </button>
+      </div>
     </li>
   );
 }

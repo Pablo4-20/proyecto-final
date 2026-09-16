@@ -12,6 +12,9 @@ function Dashboard() {
   
   // Estado para controlar el Modal de Eliminación personalizado
   const [modalEliminar, setModalEliminar] = useState({ abierto: false, id: null });
+  
+  // NUEVO ESTADO: Controla el modal de edición y guarda los datos que se están editando
+  const [movimientoAEditar, setMovimientoAEditar] = useState(null);
 
   const handleCerrarSesion = async () => {
     try {
@@ -54,6 +57,7 @@ function Dashboard() {
     }
   };
 
+  // --- LÓGICA DE ELIMINACIÓN ---
   const solicitarEliminar = (id) => {
     setModalEliminar({ abierto: true, id });
   };
@@ -69,6 +73,27 @@ function Dashboard() {
     }
   };
 
+  // --- LÓGICA DE EDICIÓN ---
+  const solicitarEditar = (mov) => {
+    setMovimientoAEditar({ ...mov }); // Copiamos los datos del movimiento al estado del modal
+  };
+
+  const handleEditChange = (e) => {
+    setMovimientoAEditar({ ...movimientoAEditar, [e.target.name]: e.target.value });
+  };
+
+  const confirmarEditar = async (e) => {
+    e.preventDefault();
+    try {
+      await api.put(`/movimientos/${movimientoAEditar.id}`, movimientoAEditar);
+      cargarMovimientos(); // Refrescamos la tabla
+      setMovimientoAEditar(null); // Cerramos el modal
+    } catch (error) {
+      console.error("Error al editar:", error);
+      alert("Ocurrió un error al guardar los cambios.");
+    }
+  };
+
   // --- CÁLCULOS AUTOMÁTICOS PARA LAS TARJETAS ---
   const totalIngresos = movimientos
     .filter(m => m.tipo === 'ingreso')
@@ -79,6 +104,9 @@ function Dashboard() {
     .reduce((acc, m) => acc + parseFloat(m.monto), 0);
 
   const saldoDisponible = totalIngresos - totalGastos;
+
+  // Clase CSS reutilizable para los inputs del modal de edición
+  const inputClass = "w-full p-3 mb-4 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition-colors";
 
   return (
     <div className={`${darkMode ? 'dark' : ''} min-h-screen transition-colors duration-300 relative`}>
@@ -144,7 +172,12 @@ function Dashboard() {
 
             <section className="md:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm transition-colors">
               <h2 className="text-xl font-bold mb-6 border-b pb-2 dark:border-gray-700">Historial</h2>
-              <ListaMovimientos movimientos={movimientos} onEliminar={solicitarEliminar} />
+              {/* Le pasamos solicitarEliminar Y solicitarEditar */}
+              <ListaMovimientos 
+                movimientos={movimientos} 
+                onEliminar={solicitarEliminar} 
+                onEditar={solicitarEditar} 
+              />
             </section>
           </main>
 
@@ -176,6 +209,95 @@ function Dashboard() {
                 Sí, eliminar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL DE EDICIÓN PERSONALIZADO --- */}
+      {movimientoAEditar && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl max-w-md w-full border border-gray-200 dark:border-gray-700 animate-in fade-in zoom-in duration-200">
+            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4 border-b pb-2 dark:border-gray-700">
+              Editar Registro
+            </h3>
+            
+            <form onSubmit={confirmarEditar} className="flex flex-col">
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <button
+                  type="button"
+                  onClick={() => setMovimientoAEditar({ ...movimientoAEditar, tipo: 'gasto' })}
+                  className={`py-2 rounded-lg font-bold text-sm transition-all cursor-pointer ${
+                    movimientoAEditar.tipo === 'gasto' 
+                      ? 'bg-red-500 text-white shadow-red-500/30' 
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                  }`}
+                >
+                  📉 Gasto
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMovimientoAEditar({ ...movimientoAEditar, tipo: 'ingreso' })}
+                  className={`py-2 rounded-lg font-bold text-sm transition-all cursor-pointer ${
+                    movimientoAEditar.tipo === 'ingreso' 
+                      ? 'bg-green-500 text-white shadow-green-500/30' 
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                  }`}
+                >
+                  📈 Ingreso
+                </button>
+              </div>
+
+              <input 
+                type="number" 
+                name="monto" 
+                value={movimientoAEditar.monto} 
+                onChange={handleEditChange} 
+                placeholder="Monto" 
+                className={inputClass} 
+                required 
+                step="0.01" 
+              />
+              <input 
+                type="text" 
+                name="categoria" 
+                value={movimientoAEditar.categoria} 
+                onChange={handleEditChange} 
+                placeholder="Categoría" 
+                className={inputClass} 
+                required 
+              />
+              <input 
+                type="date" 
+                name="fecha" 
+                value={movimientoAEditar.fecha} 
+                onChange={handleEditChange} 
+                className={inputClass} 
+                required 
+              />
+              <textarea 
+                name="descripcion" 
+                value={movimientoAEditar.descripcion || ''} 
+                onChange={handleEditChange} 
+                placeholder="Descripción (Opcional)" 
+                className={`${inputClass} resize-none h-24`} 
+              />
+
+              <div className="flex gap-3 mt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setMovimientoAEditar(null)} 
+                  className="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2.5 rounded-lg transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition-colors shadow-md cursor-pointer"
+                >
+                  Guardar Cambios
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
