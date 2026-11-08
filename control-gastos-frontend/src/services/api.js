@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://lat-oakland-mat-preliminary.trycloudflare.com/api',
+  baseURL: 'http://localhost:8000/api',
   headers: {
     'Accept': 'application/json',
     'Content-Type': 'application/json'
@@ -16,5 +16,13 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Función para obtener el cierre diario
+export const getCierreDiario = async (fecha) => {
+  const response = await api.get('/movimientos/cierre', {
+      params: { fecha }
+  });
+  return response.data;
+};
 
 export default api;

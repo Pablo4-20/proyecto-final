@@ -10,7 +10,7 @@ class MovimientoController extends Controller
     // 1. Obtener todos los movimientos
     public function index(Request $request)
     {
-        // Reemplazamos Movimiento::all() para filtrar solo por el usuario autenticado[cite: 3]
+        // Reemplazamos Movimiento::all() para filtrar solo por el usuario autenticado
         $movimientos = $request->user()->movimientos()->orderBy('fecha', 'desc')->get();
         
         return response()->json($movimientos);
@@ -27,7 +27,7 @@ class MovimientoController extends Controller
             // 'descripcion' => 'nullable|string' // Descomenta si usas este campo en BD
         ]);
 
-        // Ya no "quemamos" el user_id, lo asignamos dinámicamente mediante la relación[cite: 3]
+        // Ya no "quemamos" el user_id, lo asignamos dinámicamente mediante la relación
         $movimiento = $request->user()->movimientos()->create($validated);
 
         return response()->json($movimiento, 201);
@@ -36,7 +36,7 @@ class MovimientoController extends Controller
     // 3. Actualizar un registro
     public function update(Request $request, $id)
     {
-        // Buscamos explícitamente dentro de los registros del usuario actual[cite: 3]
+        // Buscamos explícitamente dentro de los registros del usuario actual
         $movimiento = $request->user()->movimientos()->findOrFail($id);
         
         $movimiento->update($request->all());
@@ -47,11 +47,34 @@ class MovimientoController extends Controller
     // 4. Eliminar un registro
     public function destroy(Request $request, $id)
     {
-        // Si el ID pertenece a otro usuario, Laravel no lo encontrará aquí y devolverá 404[cite: 3]
+        // Si el ID pertenece a otro usuario, Laravel no lo encontrará aquí y devolverá 404
         $movimiento = $request->user()->movimientos()->findOrFail($id);
         
         $movimiento->delete();
         
         return response()->json(null, 204);
+    }
+
+    // 5. Obtener el cierre de caja diario
+    public function cierreDiario(Request $request)
+    {
+        // Obtener la fecha de la consulta o usar la fecha de hoy
+        $fecha = $request->query('fecha', now()->toDateString());
+
+        // Obtener los movimientos del usuario autenticado para esa fecha
+        $movimientos = $request->user()->movimientos()
+            ->whereDate('fecha', $fecha)
+            ->get();
+
+        $ingresos = $movimientos->where('tipo', 'ingreso')->sum('monto');
+        $gastos = $movimientos->where('tipo', 'gasto')->sum('monto');
+
+        return response()->json([
+            'fecha' => $fecha,
+            'total_ingresos' => $ingresos,
+            'total_gastos' => $gastos,
+            'balance_diario' => $ingresos - $gastos,
+            'total_movimientos' => $movimientos->count(),
+        ]);
     }
 }
